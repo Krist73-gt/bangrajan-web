@@ -93,20 +93,21 @@ export default function CheckInPage() {
       let isCleaningUp = false;
       const html5QrCode = new Html5Qrcode("reader", {
         formatsToSupport: [
-           Html5QrcodeSupportedFormats.QR_CODE,
-           Html5QrcodeSupportedFormats.CODE_128,
-           Html5QrcodeSupportedFormats.CODE_39,
-           Html5QrcodeSupportedFormats.EAN_13
+           Html5QrcodeSupportedFormats.QR_CODE // Hanya memindai QR Code membuat proses jauh lebih cepat
         ],
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
+          useBarCodeDetectorIfSupported: true // Gunakan Native API browser jika ada
         },
         verbose: false
       });
       
       html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 15 },
+        { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+        { 
+          fps: 30, // Tingkatkan frame per second agar lebih responsif
+          qrbox: { width: 250, height: 250 }, // Hanya memindai kotak tengah (menghemat CPU)
+          aspectRatio: 1.0
+        },
         (decodedText) => {
           processScanCode(decodedText);
         },

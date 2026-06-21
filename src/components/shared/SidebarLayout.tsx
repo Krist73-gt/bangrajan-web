@@ -45,18 +45,39 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   }, [session]);
 
   useEffect(() => {
-    // We import fetchApi inline or from lib/api, wait I need to import fetchApi
     import('@/lib/api').then(({ fetchApi }) => {
-      fetchApi('/notifications', { cache: 'no-store' })
-        .then(data => setNotifications(data || []))
-        .catch(err => console.error('Failed to load notifications', err));
+      Promise.all([
+        fetchApi('/notifications', { cache: 'no-store' }).catch(() => []),
+        fetchApi('/announcements', { cache: 'no-store' }).catch(() => [])
+      ]).then(([dataNotif, dataAnn]) => {
+        const notifs = dataNotif || [];
+        const anns = dataAnn || [];
+        const mappedAnns = anns.map((a: any) => ({
+          id: `ann-${a.id}`,
+          title: `Pengumuman: ${a.title}`,
+          message: a.content,
+          createdAt: a.createdAt,
+          isRead: false
+        }));
+        
+        const combined = [...mappedAnns, ...notifs].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNotifications(combined);
+      });
     });
   }, []);
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setIsNotifOpen(false);
+  };
 
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
   };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const hasUnread = unreadCount > 0;
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex">
@@ -147,15 +168,15 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                 className="relative p-2 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors"
               >
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-fight-500 animate-pulse" />
+                <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full animate-pulse transition-colors ${hasUnread ? 'bg-fight-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-[var(--accent)]'}`} />
               </button>
               
               {/* Notifications Dropdown */}
               {isNotifOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-up">
                   <div className="p-4 border-b border-[var(--border-color)] flex justify-between items-center">
-                    <h3 className="font-bold text-[var(--text-primary)]">Notifikasi</h3>
-                    <span className="text-xs bg-fight-500/10 text-fight-500 px-2 py-1 rounded-full font-bold">{notifications.filter(n => !n.isRead).length} Baru</span>
+                    <h3 className="font-bold text-[var(--text-primary)]">Notifikasi & Pengumuman</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full font-bold ${hasUnread ? 'bg-fight-500/10 text-fight-500' : 'bg-[var(--accent-light)] text-[var(--accent)]'}`}>{unreadCount} Baru</span>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
@@ -171,7 +192,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                     ))}
                   </div>
                   <div className="p-3 text-center border-t border-[var(--border-color)]">
-                    <button className="text-xs text-[var(--accent)] hover:text-fight-500 font-medium transition-colors">Tandai semua sudah dibaca</button>
+                    <button onClick={handleMarkAllRead} className="text-xs text-[var(--text-secondary)] hover:text-fight-500 font-medium transition-colors">Tandai semua sudah dibaca</button>
                   </div>
                 </div>
               )}

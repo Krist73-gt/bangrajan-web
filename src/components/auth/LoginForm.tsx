@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { signIn } from '@/lib/auth-client';
+import { signIn, forgetPassword } from '@/lib/auth-client';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -15,6 +15,8 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +46,96 @@ export default function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Silakan masukkan email Anda.');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const { error: forgetError } = await forgetPassword({
+        email,
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (forgetError) {
+        setError(forgetError.message || 'Gagal mengirim link reset.');
+        setIsLoading(false);
+        return;
+      }
+
+      setResetSuccess(true);
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan pada sistem.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isForgotPassword) {
+    return (
+      <div className="w-full">
+        <div className="text-center mb-8">
+          <h2 
+            className="text-3xl font-bold text-[var(--text-primary)] tracking-wide mb-2"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            LUPA PASSWORD
+          </h2>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Masukkan email terdaftar untuk mengatur ulang password.
+          </p>
+        </div>
+
+        {resetSuccess ? (
+          <div className="text-center mb-8">
+            <div className="p-4 mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg">
+              Link reset password telah dikirim! (Cek terminal API karena sedang dalam mode simulasi).
+            </div>
+            <Button onClick={() => { setIsForgotPassword(false); setResetSuccess(false); }} className="w-full">
+              Kembali ke Halaman Login
+            </Button>
+          </div>
+        ) : (
+          <form className="space-y-6" onSubmit={handleForgotPassword}>
+            {error && (
+              <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
+                {error}
+              </div>
+            )}
+            
+            <Input
+              label="Email"
+              type="email"
+              placeholder="email@contoh.com"
+              icon={<Mail size={18} />}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <Button type="submit" variant="primary" className="w-full h-11" isLoading={isLoading}>
+              Kirim Link Reset
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => { setIsForgotPassword(false); setError(''); }}
+                className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                ← Kembali ke Login
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -103,7 +195,7 @@ export default function LoginForm() {
             />
             <span className="text-[var(--text-secondary)]">Ingat saya</span>
           </label>
-          <a href="#" className="font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(true); setError(''); }} className="font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">
             Lupa password?
           </a>
         </div>

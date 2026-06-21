@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-[var(--text-primary)]">Check-in Terakhir</h3>
-            <Link href="/admin/check-in" className="text-xs font-medium text-[var(--accent)] hover:text-fight-500 transition-colors flex items-center gap-1">
+            <Link href="/admin/members" className="text-xs font-medium text-[var(--accent)] hover:text-fight-500 transition-colors flex items-center gap-1">
               Lihat Semua <ArrowRight size={14} />
             </Link>
           </div>
@@ -87,7 +87,9 @@ export default function AdminDashboardPage() {
             {data.recentCheckins && data.recentCheckins.length > 0 ? (
               data.recentCheckins.map((log: any, i: number) => {
                 const dateObj = new Date(log.checkinTime);
-                const time = `${dateObj.getUTCHours().toString().padStart(2, '0')}:${dateObj.getUTCMinutes().toString().padStart(2, '0')}`;
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                const dateStr = `${dateObj.getUTCDate().toString().padStart(2, '0')} ${months[dateObj.getUTCMonth()]} ${dateObj.getUTCFullYear()}`;
+                const timeStr = `${dateObj.getUTCHours().toString().padStart(2, '0')}:${dateObj.getUTCMinutes().toString().padStart(2, '0')}`;
                 const isSuccess = log.status === 'SUCCESS' || log.status === 'Berhasil';
                 return (
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-color)]">
@@ -97,7 +99,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-[var(--text-primary)]">{log.memberName || log.member?.barcode || '-'}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{time} WIB</p>
+                        <p className="text-xs text-[var(--text-muted)]">{dateStr} • {timeStr} WIB</p>
                       </div>
                     </div>
                     <div className="text-right">

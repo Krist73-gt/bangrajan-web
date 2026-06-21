@@ -99,7 +99,7 @@ export default function MemberDashboard() {
                 {stats.recentLogs.map((log: any, i: number) => {
                   const dateObj = new Date(log.checkinTime);
                   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-                  const dateStr = `${dateObj.getUTCDate()} ${months[dateObj.getUTCMonth()]}`;
+                  const dateStr = `${dateObj.getUTCDate().toString().padStart(2, '0')} ${months[dateObj.getUTCMonth()]}`;
                   const timeStr = `${dateObj.getUTCHours().toString().padStart(2, '0')}:${dateObj.getUTCMinutes().toString().padStart(2, '0')}`;
                   return (
                     <div key={log.id || i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
@@ -109,7 +109,7 @@ export default function MemberDashboard() {
                       <div className="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-color)] shadow-sm">
                         <div className="flex items-center justify-between mb-1">
                           <div className="font-medium text-[var(--text-primary)] text-sm">{dateStr}</div>
-                          <div className="text-xs text-[var(--text-muted)]">{timeStr}</div>
+                          <div className="text-xs text-[var(--text-muted)]">{timeStr} WIB</div>
                         </div>
                         <div className={`text-xs font-medium ${log.status === 'Berhasil' ? 'text-emerald-500' : 'text-red-500'}`}>
                           {log.status === 'Berhasil' ? '✅ Hadir' : '❌ Gagal'}

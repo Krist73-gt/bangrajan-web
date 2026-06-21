@@ -50,26 +50,35 @@ export default function CheckInPage() {
           expiry: response.expiry ? new Date(response.expiry).toLocaleDateString() : '-',
         });
         playBeep(true);
+      } else if (response && response.success === false) {
+        // Handle logic rejection (e.g., expired, no sessions)
+        setStatus('error');
+        setResult({
+          name: response.name || 'Member Tidak Dikenal',
+          plan: response.plan || 'Expired / Tidak Ada',
+          sessions: response.sessions || { old: 0, new: 0 },
+          expiry: response.expiry ? new Date(response.expiry).toLocaleDateString() : '-',
+          message: response.message || 'Gagal check-in',
+        });
+        playBeep(false);
       } else {
-        throw new Error(response.message || 'Gagal check-in');
+        throw new Error('Gagal terhubung ke server');
       }
     } catch (err: any) {
+      // Handle network errors or pure server crashes
       setStatus('error');
       setResult({
-        name: 'Member Tidak Dikenal',
-        plan: 'Expired / Tidak Ada',
+        name: 'Sistem Error',
+        plan: '-',
         sessions: { old: 0, new: 0 },
         expiry: '-',
-        message: err.message || 'Barcode tidak valid atau paket telah expired.',
+        message: err.message || 'Terjadi kesalahan pada sistem.',
       });
       playBeep(false);
     } finally {
       setIsLoading(false);
       setBarcode('');
-      setTimeout(() => {
-        isProcessingRef.current = false;
-        setStatus('idle');
-      }, 3000); // Jeda 3 detik sebelum lanjut absen berikutnya
+      isProcessingRef.current = false;
     }
   };
 
@@ -81,9 +90,13 @@ export default function CheckInPage() {
   // Camera Scanner logic
   useEffect(() => {
     if (mode === 'scanner' && status === 'idle') {
+      let isCleaningUp = false;
       const html5QrCode = new Html5Qrcode("reader", {
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE
+           Html5QrcodeSupportedFormats.QR_CODE,
+           Html5QrcodeSupportedFormats.CODE_128,
+           Html5QrcodeSupportedFormats.CODE_39,
+           Html5QrcodeSupportedFormats.EAN_13
         ],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true
@@ -91,29 +104,31 @@ export default function CheckInPage() {
         verbose: false
       });
       
-      const startScanner = async () => {
-        try {
-          await html5QrCode.start(
-            { facingMode: "environment" },
-            {
-              fps: 20
-            },
-            (decodedText) => {
-              processScanCode(decodedText);
-            },
-            () => { } // ignore
-          );
-        } catch (err) {
-          console.error("Camera error:", err);
-          // Optional: fallback logic here
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 15 },
+        (decodedText) => {
+          processScanCode(decodedText);
+        },
+        () => { } // ignore
+      ).then(() => {
+        // Jika status sudah berubah ke bukan idle (komponen ter-unmount) selama proses start, matikan segera
+        if (isCleaningUp) {
+          html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
         }
-      };
-      
-      startScanner();
+      }).catch((err) => {
+        console.error("Camera error:", err);
+      });
 
       return () => {
+        isCleaningUp = true;
         if (html5QrCode.isScanning) {
-          html5QrCode.stop().then(() => html5QrCode.clear()).catch(console.error);
+          html5QrCode.stop()
+            .then(() => html5QrCode.clear())
+            .catch(() => {});
+        } else {
+          // It might be paused or starting, clear the UI just in case
+          try { html5QrCode.clear(); } catch(e) {}
         }
       };
     }
@@ -173,16 +188,12 @@ export default function CheckInPage() {
               {/* Overlay Feedback Langsung di atas Kamera */}
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none">
                 {status === 'success' && result ? (
-                  <div className="bg-emerald-500/90 text-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center animate-punch-in backdrop-blur-md">
-                    <CheckCircle2 size={64} className="mb-2" />
-                    <h2 className="text-3xl font-bold tracking-wider text-center">ABSEN BERHASIL</h2>
-                    <p className="text-xl font-medium mt-2">{result.name}</p>
+                  <div className="bg-emerald-500/90 text-white p-6 rounded-full shadow-2xl flex items-center justify-center animate-punch-in backdrop-blur-md">
+                    <CheckCircle2 size={80} />
                   </div>
                 ) : status === 'error' && result ? (
-                  <div className="bg-fight-500/90 text-white px-6 py-6 rounded-2xl shadow-2xl flex flex-col items-center animate-punch-in backdrop-blur-md max-w-[80%] text-center">
-                    <XCircle size={64} className="mb-2" />
-                    <h2 className="text-2xl font-bold tracking-wider">GAGAL</h2>
-                    <p className="text-sm font-medium mt-2">{result.message}</p>
+                  <div className="bg-fight-500/90 text-white p-6 rounded-full shadow-2xl flex items-center justify-center animate-punch-in backdrop-blur-md">
+                    <XCircle size={80} />
                   </div>
                 ) : (
                   <>
@@ -195,9 +206,25 @@ export default function CheckInPage() {
                 )}
               </div>
             </div>
-            <p className="text-xs text-[var(--text-muted)] flex items-center justify-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Scanner Aktif. Siap memindai.
-            </p>
+            {status === 'idle' ? (
+              <p className="text-xs text-[var(--text-muted)] flex items-center justify-center gap-2 mt-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Scanner Aktif. Siap memindai.
+              </p>
+            ) : status === 'success' ? (
+              <button 
+                onClick={() => setStatus('idle')} 
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3 font-bold text-lg transition-colors shadow-lg mt-2"
+              >
+                Scan Berikutnya
+              </button>
+            ) : (
+              <button 
+                onClick={() => setStatus('idle')} 
+                className="w-full bg-fight-500 hover:bg-fight-600 text-white rounded-xl py-3 font-bold text-lg transition-colors shadow-lg mt-2"
+              >
+                Coba Lagi
+              </button>
+            )}
           </div>
         ) : (
           <form onSubmit={handleScan} className="relative z-10 max-w-sm mx-auto">

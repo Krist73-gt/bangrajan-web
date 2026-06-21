@@ -102,7 +102,7 @@ export default function CheckInPage() {
       });
       
       html5QrCode.start(
-        { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+        { facingMode: "environment" },
         { 
           fps: 30, // Tingkatkan frame per second agar lebih responsif
           qrbox: { width: 250, height: 250 }, // Hanya memindai kotak tengah (menghemat CPU)

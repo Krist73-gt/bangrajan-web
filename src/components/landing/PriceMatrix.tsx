@@ -66,7 +66,7 @@ export default function PriceMatrix() {
             className="text-4xl sm:text-5xl lg:text-7xl font-bold text-[var(--text-primary)]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            💰 DAFTAR HARGA
+            DAFTAR HARGA
           </h2>
           <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-[var(--text-secondary)] font-medium">
             <span className="flex items-center gap-2 bg-[var(--bg-elevated)] px-3 py-1 rounded-full">

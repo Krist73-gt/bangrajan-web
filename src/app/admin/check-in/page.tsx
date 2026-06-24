@@ -47,7 +47,7 @@ export default function CheckInPage() {
           name: response.name || '-',
           plan: response.plan || '-',
           sessions: response.sessions || { old: 0, new: 0 },
-          expiry: response.expiry ? new Date(response.expiry).toLocaleDateString() : '-',
+          expiry: response.expiry ? new Date(response.expiry).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-',
         });
         playBeep(true);
       } else if (response && response.success === false) {
@@ -57,7 +57,7 @@ export default function CheckInPage() {
           name: response.name || 'Member Tidak Dikenal',
           plan: response.plan || 'Expired / Tidak Ada',
           sessions: response.sessions || { old: 0, new: 0 },
-          expiry: response.expiry ? new Date(response.expiry).toLocaleDateString() : '-',
+          expiry: response.expiry ? new Date(response.expiry).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-',
           message: response.message || 'Gagal check-in',
         });
         playBeep(false);

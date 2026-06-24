@@ -97,7 +97,7 @@ export default function Schedule() {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            🕐 JADWAL LATIHAN
+            JADWAL LATIHAN
           </h2>
         </div>
 

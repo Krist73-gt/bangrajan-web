@@ -19,7 +19,7 @@ export default function Location() {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            📍 LOKASI & KONTAK
+            LOKASI & KONTAK
           </h2>
           <p className="mt-4 text-[var(--text-muted)] font-bold tracking-widest uppercase">
             EST 2013

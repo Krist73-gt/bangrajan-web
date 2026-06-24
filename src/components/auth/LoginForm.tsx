@@ -94,7 +94,7 @@ export default function LoginForm() {
         {resetSuccess ? (
           <div className="text-center mb-8">
             <div className="p-4 mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg">
-              Link reset password telah dikirim! (Cek terminal API karena sedang dalam mode simulasi).
+              Link reset password telah dikirim ke email Anda! Silakan cek kotak masuk (inbox) atau folder spam Anda.
             </div>
             <Button onClick={() => { setIsForgotPassword(false); setResetSuccess(false); }} className="w-full">
               Kembali ke Halaman Login

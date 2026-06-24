@@ -43,7 +43,7 @@ export default function Gallery() {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            📸 GALLERY KEGIATAN
+            GALLERY KEGIATAN
           </h2>
         </div>
 

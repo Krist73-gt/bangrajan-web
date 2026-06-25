@@ -103,13 +103,18 @@ export default function MembersPage() {
   };
 
   // Handle Renewal / Session Adjustment
-  const handleRenewal = async (action: 'renew_package', amount: number) => {
+  const handleRenewal = async (action: 'add_sessions' | 'reduce_sessions' | 'renew_package', amount: number) => {
     try {
       if (action === 'renew_package') {
         if (!renewPackageId) return;
         await fetchApi(`/members/${selectedMember.id}/renew`, {
           method: 'POST',
           body: JSON.stringify({ packageId: parseInt(renewPackageId) })
+        });
+      } else {
+        await fetchApi(`/members/${selectedMember.id}/adjust-sessions`, {
+          method: 'POST',
+          body: JSON.stringify({ delta: amount, notes: 'Manual adjustment' })
         });
       }
       setIsRenewalModalOpen(false);
@@ -430,6 +435,26 @@ export default function MembersPage() {
                   >
                     <CalendarIcon size={18} /> Perpanjang Paket
                   </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 border border-[var(--border-color)] rounded-xl hover:border-blue-500 transition-colors group cursor-pointer bg-[var(--bg-secondary)] text-center"
+                     onClick={() => handleRenewal('add_sessions', 1)}>
+                  <div className="mx-auto w-10 h-10 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 mb-2">
+                    <Plus size={20} />
+                  </div>
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-blue-500 transition-colors">Tambah Sesi</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">(+1 Manual)</p>
+                </div>
+                
+                <div className="p-3 border border-[var(--border-color)] rounded-xl hover:border-fight-500 transition-colors group cursor-pointer bg-[var(--bg-secondary)] text-center"
+                     onClick={() => handleRenewal('reduce_sessions', -1)}>
+                  <div className="mx-auto w-10 h-10 flex items-center justify-center rounded-lg bg-fight-500/10 text-fight-500 mb-2">
+                    <Minus size={20} />
+                  </div>
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-fight-500 transition-colors">Kurangi Sesi</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">(-1 Manual)</p>
                 </div>
               </div>
             </div>

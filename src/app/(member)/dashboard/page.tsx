@@ -5,12 +5,29 @@ import Card from '@/components/ui/Card';
 import StatusCard from '@/components/member/StatusCard';
 import TrainingChart from '@/components/member/TrainingChart';
 import Announcements from '@/components/member/Announcements';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, History, X } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 
 export default function MemberDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [activityHistory, setActivityHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  const openHistoryModal = async () => {
+    setIsHistoryModalOpen(true);
+    setIsLoadingHistory(true);
+    try {
+      const history = await fetchApi('/dashboard/member/activity');
+      setActivityHistory(history || []);
+    } catch (err) {
+      console.error('Failed to load history', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   useEffect(() => {
     fetchApi('/dashboard/member/stats')
@@ -93,7 +110,15 @@ export default function MemberDashboard() {
           </div>
 
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Riwayat Terakhir</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Riwayat Terakhir</h3>
+              <button 
+                onClick={openHistoryModal}
+                className="text-xs font-bold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors flex items-center gap-1 bg-[var(--accent)]/10 px-3 py-1.5 rounded-full"
+              >
+                <History size={14} /> Lihat Semua
+              </button>
+            </div>
             {stats.recentLogs && stats.recentLogs.length > 0 ? (
               <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-[var(--border-color)] before:via-[var(--border-color)] before:to-transparent">
                 {stats.recentLogs.map((log: any, i: number) => {
@@ -125,6 +150,72 @@ export default function MemberDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* History / Audit Log Modal */}
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card className="w-full max-w-lg p-6 bg-[var(--bg-primary)] border border-[var(--border-color)] max-h-[90vh] flex flex-col animate-fade-up">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-[var(--text-primary)]">Riwayat Aktivitas</h3>
+                <p className="text-sm text-[var(--text-secondary)]">{stats?.fullName || 'Semua catatan aktivitas'}</p>
+              </div>
+              <button onClick={() => setIsHistoryModalOpen(false)} className="text-[var(--text-muted)] hover:text-white"><X size={20}/></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {isLoadingHistory ? (
+                <div className="text-center py-8 text-[var(--text-muted)]">Memuat riwayat...</div>
+              ) : activityHistory.length === 0 ? (
+                <div className="text-center py-8 text-[var(--text-muted)] border border-dashed border-[var(--border-color)] rounded-xl">
+                  Belum ada catatan aktivitas.
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-[var(--border-color)] ml-3 pl-6 space-y-6">
+                  {activityHistory.map((item, index) => (
+                    <div key={index} className="relative">
+                      {/* Timeline Dot */}
+                      <span className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 border-[var(--bg-primary)] ${
+                        item.type === 'checkin' ? (item.action === 'Berhasil' ? 'bg-emerald-500' : 'bg-fight-500') : 'bg-blue-500'
+                      }`} />
+                      
+                      <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className={`text-sm font-bold ${
+                            item.type === 'checkin' ? (item.action === 'Berhasil' ? 'text-emerald-500' : 'text-fight-500') : 'text-blue-500'
+                          }`}>
+                            {item.type === 'checkin' ? `Check-in ${item.action}` : 
+                              item.action === 'renew' ? 'Perpanjang Paket' : 
+                              item.action === 'add_session' ? 'Tambah Sesi Manual' : 'Kurangi Sesi Manual'}
+                          </span>
+                          <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+                            {new Date(item.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[var(--text-primary)] mb-1">
+                          {item.description || '-'}
+                        </p>
+                        {item.createdBy && (
+                          <p className="text-xs text-[var(--text-secondary)] italic">Oleh: {item.createdBy}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-6 flex justify-end mt-2">
+              <button 
+                type="button"
+                className="px-4 py-2 border border-[var(--border-color)] rounded-xl font-bold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                onClick={() => setIsHistoryModalOpen(false)}>
+                Tutup
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

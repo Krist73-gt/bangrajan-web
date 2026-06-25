@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, FileText, IdCard, LogOut, Menu, X, Bell } from 'lucide-react';
+import { LayoutDashboard, FileText, IdCard, LogOut, Menu, X, Bell, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useSession, signOut } from '@/lib/auth-client';
 
@@ -24,7 +24,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   
   const pathname = usePathname();
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   
   const { data: session, isPending } = useSession();
 
@@ -161,6 +161,15 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           </button>
 
           <div className="flex items-center gap-4 ml-auto relative">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors"
+              title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             {/* Notification Bell */}
             <div className="relative">
               <button 

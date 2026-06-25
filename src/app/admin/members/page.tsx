@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import { Search, Plus, Edit2, History, Calendar as CalendarIcon, Minus, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit2, History, Calendar as CalendarIcon, Minus, Trash2, ClipboardList } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { fetchApi } from '@/lib/api';
 
@@ -17,6 +17,10 @@ export default function MembersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const [activityHistory, setActivityHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   const [newMember, setNewMember] = useState({ fullName: '', phone: '', packageId: '', expiryDate: '', remainingSessions: 0 });
   const [editMember, setEditMember] = useState({ fullName: '', phone: '' });
@@ -99,18 +103,13 @@ export default function MembersPage() {
   };
 
   // Handle Renewal / Session Adjustment
-  const handleRenewal = async (action: 'add_sessions' | 'reduce_sessions' | 'renew_package', amount: number) => {
+  const handleRenewal = async (action: 'renew_package', amount: number) => {
     try {
       if (action === 'renew_package') {
         if (!renewPackageId) return;
         await fetchApi(`/members/${selectedMember.id}/renew`, {
           method: 'POST',
           body: JSON.stringify({ packageId: parseInt(renewPackageId) })
-        });
-      } else {
-        await fetchApi(`/members/${selectedMember.id}/adjust-sessions`, {
-          method: 'POST',
-          body: JSON.stringify({ delta: amount, notes: 'Manual adjustment' })
         });
       }
       setIsRenewalModalOpen(false);
@@ -137,6 +136,21 @@ export default function MembersPage() {
     setSelectedMember(m);
     setRenewPackageId(m.packageId?.toString() || '');
     setIsRenewalModalOpen(true);
+  };
+
+  const openHistoryModal = async (m: any) => {
+    setSelectedMember(m);
+    setIsHistoryModalOpen(true);
+    setIsLoadingHistory(true);
+    setActivityHistory([]);
+    try {
+      const history = await fetchApi(`/members/${m.id}/activity`);
+      setActivityHistory(history || []);
+    } catch (err) {
+      console.error('Failed to load history', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
   return (
@@ -228,6 +242,13 @@ export default function MembersPage() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => openHistoryModal(member)}
+                          className="p-2 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
+                          title="Riwayat Aktivitas"
+                        >
+                          <ClipboardList size={16} />
+                        </button>
                         <button 
                           onClick={() => openRenewalModal(member)}
                           className="p-2 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
@@ -411,30 +432,71 @@ export default function MembersPage() {
                   </Button>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 border border-[var(--border-color)] rounded-xl hover:border-blue-500 transition-colors group cursor-pointer bg-[var(--bg-secondary)] text-center"
-                     onClick={() => handleRenewal('add_sessions', 1)}>
-                  <div className="mx-auto w-10 h-10 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 mb-2">
-                    <Plus size={20} />
-                  </div>
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-blue-500 transition-colors">Tambah Sesi</h4>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">(+1 Manual)</p>
-                </div>
-                
-                <div className="p-3 border border-[var(--border-color)] rounded-xl hover:border-fight-500 transition-colors group cursor-pointer bg-[var(--bg-secondary)] text-center"
-                     onClick={() => handleRenewal('reduce_sessions', -1)}>
-                  <div className="mx-auto w-10 h-10 flex items-center justify-center rounded-lg bg-fight-500/10 text-fight-500 mb-2">
-                    <Minus size={20} />
-                  </div>
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-fight-500 transition-colors">Kurangi Sesi</h4>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">(-1 Manual)</p>
-                </div>
-              </div>
             </div>
 
             <div className="pt-6 flex justify-end">
               <Button type="button" variant="outline" onClick={() => setIsRenewalModalOpen(false)}>Tutup</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* History / Audit Log Modal */}
+      {isHistoryModalOpen && selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card className="w-full max-w-lg p-6 bg-[var(--bg-primary)] border border-[var(--border-color)] max-h-[90vh] flex flex-col animate-fade-up">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-[var(--text-primary)]">Riwayat Aktivitas</h3>
+                <p className="text-sm text-[var(--text-secondary)]">{selectedMember.fullName}</p>
+              </div>
+              <button onClick={() => setIsHistoryModalOpen(false)} className="text-[var(--text-muted)] hover:text-white">✕</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {isLoadingHistory ? (
+                <div className="text-center py-8 text-[var(--text-muted)]">Memuat riwayat...</div>
+              ) : activityHistory.length === 0 ? (
+                <div className="text-center py-8 text-[var(--text-muted)] border border-dashed border-[var(--border-color)] rounded-xl">
+                  Belum ada catatan aktivitas.
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-[var(--border-color)] ml-3 pl-6 space-y-6">
+                  {activityHistory.map((item, index) => (
+                    <div key={index} className="relative">
+                      {/* Timeline Dot */}
+                      <span className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 border-[var(--bg-primary)] ${
+                        item.type === 'checkin' ? (item.action === 'Berhasil' ? 'bg-emerald-500' : 'bg-fight-500') : 'bg-blue-500'
+                      }`} />
+                      
+                      <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className={`text-sm font-bold ${
+                            item.type === 'checkin' ? (item.action === 'Berhasil' ? 'text-emerald-500' : 'text-fight-500') : 'text-blue-500'
+                          }`}>
+                            {item.type === 'checkin' ? `Check-in ${item.action}` : 
+                              item.action === 'renew' ? 'Perpanjang Paket' : 
+                              item.action === 'add_session' ? 'Tambah Sesi Manual' : 'Kurangi Sesi Manual'}
+                          </span>
+                          <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+                            {new Date(item.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[var(--text-primary)] mb-1">
+                          {item.description || '-'}
+                        </p>
+                        {item.createdBy && (
+                          <p className="text-xs text-[var(--text-secondary)] italic">Oleh: {item.createdBy}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-6 flex justify-end mt-2">
+              <Button type="button" variant="outline" onClick={() => setIsHistoryModalOpen(false)}>Tutup</Button>
             </div>
           </Card>
         </div>

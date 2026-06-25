@@ -48,7 +48,10 @@ export default function StatusCard({ stats }: { stats: any }) {
         {/* Sessions Progress */}
         <div>
           <div className="flex justify-between items-end mb-2">
-            <p className="text-sm font-medium text-[var(--text-primary)]">Sisa Sesi</p>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Sisa Sesi</p>
+              <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-medium tracking-wide">💡 1 SESI = LATIHAN 2 JAM</p>
+            </div>
             <p className="text-2xl font-bold text-[var(--text-primary)]">
               {sessionsLeft} <span className="text-sm font-normal text-[var(--text-muted)]">/ {sessionsTotal}</span>
             </p>

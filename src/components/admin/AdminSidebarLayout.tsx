@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, Camera, Megaphone, BarChart3, LogOut, Menu, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Camera, Megaphone, BarChart3, LogOut, Menu, Bell, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useSession, signOut } from '@/lib/auth-client';
 
@@ -22,7 +22,7 @@ export default function AdminSidebarLayout({ children }: { children: React.React
   const [notifications, setNotifications] = useState<any[]>([]);
   const pathname = usePathname();
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   const { data: session } = useSession();
 
@@ -139,6 +139,15 @@ export default function AdminSidebarLayout({ children }: { children: React.React
           </button>
 
           <div className="flex items-center gap-4 ml-auto relative">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors"
+              title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             <div className="relative">
               <button 
                 onClick={() => setIsNotifOpen(!isNotifOpen)}

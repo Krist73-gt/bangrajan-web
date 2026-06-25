@@ -9,6 +9,7 @@ import { fetchApi } from '@/lib/api';
 
 const notes = [
   'Pendaftaran 25rb untuk Member Card',
+  '1 Sesi Latihan = 2 Jam',
   'Expired paket 1 bulan',
   'Waktu latihan fleksibel (Atur sendiri)',
   'Harga Private di rumah menyesuaikan jarak',

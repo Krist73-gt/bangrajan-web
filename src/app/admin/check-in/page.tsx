@@ -27,9 +27,20 @@ export default function CheckInPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isProcessingRef = useRef(false);
+  const lastScannedCodeRef = useRef('');
+  const lastScanTimeRef = useRef(0);
 
   const processScanCode = async (codeStr: string) => {
+    const now = Date.now();
     if (!codeStr.trim() || isProcessingRef.current) return;
+
+    // Mencegah kamera mengirim hasil scan yang sama berkali-kali sebelum kamera benar-benar mati (Debounce 3 detik)
+    if (mode === 'scanner' && lastScannedCodeRef.current === codeStr && now - lastScanTimeRef.current < 3000) {
+      return;
+    }
+
+    lastScannedCodeRef.current = codeStr;
+    lastScanTimeRef.current = now;
 
     isProcessingRef.current = true;
     setIsLoading(true);
